@@ -149,3 +149,7 @@ scripts/routing-peer.sh  Enrolls the host as a NetBird peer
 
 - If SELinux was disabled before the install, the next boot relabels the filesystem. Reboot once.
 - The NetBird reverse-proxy and CrowdSec add-ons from the upstream installer are not included.
+
+## License
+
+[MIT](LICENSE)
