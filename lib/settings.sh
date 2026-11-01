@@ -1,8 +1,8 @@
 # shellcheck shell=bash
 # Installer settings: precedence is environment > netbird.env > interactive prompt > default.
 
-readonly DEFAULT_NETBIRD_SERVER_IMAGE=netbirdio/netbird-server:0.81.3
-readonly DEFAULT_DASHBOARD_IMAGE=netbirdio/dashboard:v2.95.0-rootless
+readonly DEFAULT_NETBIRD_SERVER_IMAGE=netbirdio/netbird-server:0.82.0
+readonly DEFAULT_DASHBOARD_IMAGE=netbirdio/dashboard:v2.96.0-rootless
 readonly DEFAULT_TRAEFIK_IMAGE=traefik:v3.7.15
 
 is_fqdn()  { [[ $1 =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]; }
