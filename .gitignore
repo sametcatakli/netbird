@@ -1,0 +1,3 @@
+# Local settings never belong in the repository.
+netbird.env
+*.tar.gz

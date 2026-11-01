@@ -1,0 +1,33 @@
+# Rendered by install.sh -- do not edit the copy in the install directory.
+# Edge mode "external": an upstream reverse proxy terminates TLS and forwards plain HTTP here.
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+log:
+  level: INFO
+accessLog: {}
+ping: {}
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+
+entryPoints:
+  web:
+    address: ":80"
+    # Only the upstream proxy may reach this entrypoint or set X-Forwarded-* headers.
+    forwardedHeaders:
+      trustedIPs: ["${EXTERNAL_PROXY_IP}/32"]
+    http:
+      aliasHeadersStrategy: delete
+      middlewares: [upstream-only@file]
+    # Long-lived gRPC streams must not time out.
+    transport:
+      respondingTimeouts:
+        readTimeout: 0
+        writeTimeout: 0
+        idleTimeout: 0
+
+serversTransport:
+  forwardingTimeouts:
+    responseHeaderTimeout: 0s
+    idleConnTimeout: 0s

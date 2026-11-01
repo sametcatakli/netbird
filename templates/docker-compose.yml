@@ -1,0 +1,71 @@
+# Rendered by install.sh -- do not edit the copy in the install directory.
+name: netbird
+
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  networks: [netbird]
+  logging:
+    driver: json-file
+    options:
+      max-size: "50m"
+      max-file: "3"
+
+services:
+  # Edge router. Routes come from a static file, so the Docker socket is never
+  # exposed to a container. TLS is handled here or upstream (see EDGE_PROXY).
+  traefik:
+    <<: *hardening
+    image: ${TRAEFIK_IMAGE}
+    container_name: netbird-traefik
+    cap_add: [NET_BIND_SERVICE]
+    networks:
+      netbird:
+        ipv4_address: ${TRAEFIK_IP}
+    ports: ${TRAEFIK_PORTS}
+    volumes:
+      - traefik_letsencrypt:/letsencrypt
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro,Z
+      - ./traefik-dynamic.yml:/etc/traefik/dynamic.yml:ro,Z
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  dashboard:
+    <<: *hardening
+    image: ${DASHBOARD_IMAGE}
+    container_name: netbird-dashboard
+    # The image writes its runtime config into nginx and the web root at startup.
+    read_only: false
+    env_file: [./dashboard.env]
+
+  # Combined server: management, signal, relay, STUN and the embedded IdP.
+  netbird-server:
+    <<: *hardening
+    image: ${NETBIRD_SERVER_IMAGE}
+    container_name: netbird-server
+    cap_add: [NET_BIND_SERVICE]
+    command: ["--config", "/etc/netbird/config.yaml"]
+    ports:
+      - "3478:3478/udp"
+    volumes:
+      - netbird_data:/var/lib/netbird
+      - ./config.yaml:/etc/netbird/config.yaml:ro,Z
+      # Disk-backed scratch space: the GeoLite import unpacks several hundred MB.
+      - netbird_tmp:/tmp
+
+volumes:
+  netbird_data:
+  netbird_tmp:
+  traefik_letsencrypt:
+
+networks:
+  netbird:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETBIRD_SUBNET}

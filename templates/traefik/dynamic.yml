@@ -1,0 +1,72 @@
+# Rendered by install.sh -- do not edit the copy in the install directory.
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+
+http:
+  routers:
+    netbird-grpc:
+      rule: Host(`${NETBIRD_DOMAIN}`) && (PathPrefix(`/signalexchange.SignalExchange/`) || PathPrefix(`/management.ManagementService/`) || PathPrefix(`/management.ProxyService/`))
+      entryPoints: [${TRAEFIK_ENTRYPOINT}]
+      service: netbird-server-h2c
+      priority: 100
+    netbird-backend:
+      rule: Host(`${NETBIRD_DOMAIN}`) && (PathPrefix(`/relay`) || PathPrefix(`/ws-proxy/`) || PathPrefix(`/api`) || PathPrefix(`/oauth2`))
+      entryPoints: [${TRAEFIK_ENTRYPOINT}]
+      service: netbird-server
+      middlewares: [security-headers, rate-limit]
+      priority: 100
+    netbird-dashboard:
+      rule: Host(`${NETBIRD_DOMAIN}`)
+      entryPoints: [${TRAEFIK_ENTRYPOINT}]
+      service: dashboard
+      middlewares: [security-headers]
+      priority: 1
+
+  services:
+    netbird-server:
+      loadBalancer:
+        servers:
+          - url: http://netbird-server:80
+    netbird-server-h2c:
+      loadBalancer:
+        servers:
+          - url: h2c://netbird-server:80
+    dashboard:
+      loadBalancer:
+        servers:
+          - url: http://dashboard:8080
+
+  middlewares:
+    security-headers:
+      headers:
+        stsSeconds: 31536000
+        contentTypeNosniff: true
+        frameDeny: true
+        referrerPolicy: strict-origin-when-cross-origin
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=()"
+        customResponseHeaders:
+          Server: ""
+          X-Powered-By: ""
+    # Per-client-IP throttle on the REST API and login endpoints.
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1s
+        sourceCriterion:
+          ipStrategy:
+            depth: ${CLIENT_IP_DEPTH}
+    # Attached to the entrypoint in "external" edge mode only.
+    upstream-only:
+      ipAllowList:
+        sourceRange: ${UPSTREAM_SOURCE_RANGE}

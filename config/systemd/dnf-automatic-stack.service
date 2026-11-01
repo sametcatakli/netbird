@@ -1,0 +1,9 @@
+[Unit]
+Description=dnf automatic updates for Docker and NetBird packages
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Nice=19
+ExecStart=/usr/bin/dnf-automatic /etc/dnf/automatic-stack.conf --timer

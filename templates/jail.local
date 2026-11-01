@@ -1,0 +1,14 @@
+# Bans brute-force sources only; the SSH daemon configuration is left untouched.
+[DEFAULT]
+backend = systemd
+banaction = firewallcmd-rich-rules
+banaction_allports = firewallcmd-rich-rules[actiontype=<allports>]
+bantime = 1h
+bantime.increment = true
+bantime.maxtime = 1w
+findtime = 10m
+maxretry = 5
+ignoreip = 127.0.0.1/8 ::1 ${FAIL2BAN_IGNORE_IPS}
+
+[sshd]
+enabled = true

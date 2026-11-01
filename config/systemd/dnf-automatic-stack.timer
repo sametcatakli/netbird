@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Docker and NetBird package updates, before the security run
+
+[Timer]
+OnCalendar=*-*-* 5:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
